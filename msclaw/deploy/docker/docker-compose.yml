@@ -1,0 +1,124 @@
+###############################################################################
+# MSClaw Local Development Stack
+#
+# Run: docker-compose up -d
+# UI:  http://localhost:3000
+# API: http://localhost:8100
+# OPA: http://localhost:8181
+###############################################################################
+
+services:
+
+  # ---------- Infrastructure ----------
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: msclaw
+      POSTGRES_USER: msclaw
+      POSTGRES_PASSWORD: msclaw
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U msclaw"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2-alpine
+    ports:
+      - "4222:4222"    # Client
+      - "8222:8222"    # Monitoring
+    command: ["--jetstream", "--store_dir=/data", "-m", "8222"]
+    volumes:
+      - natsdata:/data
+    healthcheck:
+      test: ["CMD", "nats-server", "--signal", "ldm"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  minio:
+    image: quay.io/minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"    # Console
+    environment:
+      MINIO_ROOT_USER: msclaw
+      MINIO_ROOT_PASSWORD: msclaw-dev-secret
+    command: server /data --console-address ":9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  opa:
+    image: openpolicyagent/opa:latest-static
+    ports:
+      - "8181:8181"
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=info"
+      - "/policies"
+    volumes:
+      - ../../policies:/policies:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8181/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ---------- Application Services ----------
+
+  control-api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.control-api
+    ports:
+      - "8100:8100"
+    environment:
+      MSCLAW_DEV_MODE: "true"
+      MSCLAW_POSTGRES_URL: "postgresql://msclaw:msclaw@postgres:5432/msclaw"
+      MSCLAW_NATS_URL: "nats://nats:4222"
+      MSCLAW_OPA_URL: "http://opa:8181"
+      MSCLAW_MINIO_ENDPOINT: "minio:9000"
+      MSCLAW_MINIO_ACCESS_KEY: "msclaw"
+      MSCLAW_MINIO_SECRET_KEY: "msclaw-dev-secret"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  ui-web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.ui-web
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: "http://localhost:8100"
+    depends_on:
+      control-api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  natsdata:
+  miniodata:

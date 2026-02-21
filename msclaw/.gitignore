@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+
+# Config with secrets
+tenant.json
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+services/ui-web/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Docker volumes
+pgdata/
+natsdata/
+miniodata/
+
+# Mypy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/

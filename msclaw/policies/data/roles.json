@@ -1,0 +1,50 @@
+{
+  "roles": {
+    "admin": {
+      "description": "Full access to all actions",
+      "allowed_actions": ["*"]
+    },
+    "operator": {
+      "description": "Standard security operator - can run all operational actions",
+      "allowed_actions": [
+        "defender_xdr.isolate_device",
+        "defender_xdr.unisolate_device",
+        "defender_xdr.collect_investigation_package",
+        "defender_xdr.run_antivirus_scan",
+        "defender_xdr.resolve_device_from_incident",
+        "intune.sync_device",
+        "intune.assign_asr_policy",
+        "entra.revoke_signin_sessions",
+        "entra.disable_user",
+        "entra.enable_user"
+      ]
+    },
+    "viewer": {
+      "description": "Read-only access - can only resolve/view information",
+      "allowed_actions": [
+        "defender_xdr.resolve_device_from_incident"
+      ]
+    },
+    "intune_operator": {
+      "description": "Intune-specific operator - device management only",
+      "allowed_actions": [
+        "intune.sync_device",
+        "intune.assign_asr_policy"
+      ]
+    }
+  },
+  "approval_required_actions": {
+    "entra.revoke_signin_sessions": "High-impact identity action",
+    "entra.disable_user": "High-impact identity action",
+    "entra.enable_user": "High-impact identity action"
+  },
+  "vip_approval_triggers": {
+    "tags": ["VIP", "executive", "board-member"],
+    "actions": [
+      "defender_xdr.isolate_device",
+      "defender_xdr.unisolate_device",
+      "entra.disable_user",
+      "entra.enable_user"
+    ]
+  }
+}

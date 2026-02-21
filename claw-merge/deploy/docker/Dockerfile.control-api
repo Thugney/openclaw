@@ -1,0 +1,16 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY shared/ ./shared/
+COPY plugins/ ./plugins/
+COPY services/control_api/ ./services/control_api/
+
+EXPOSE 8100
+
+CMD ["uvicorn", "services.control_api.app.main:app", "--host", "0.0.0.0", "--port", "8100"]

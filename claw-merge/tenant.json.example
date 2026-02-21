@@ -1,0 +1,7 @@
+{
+  "tenant_id": "YOUR-TENANT-ID",
+  "client_id": "YOUR-APP-CLIENT-ID",
+  "client_secret": "YOUR-CLIENT-SECRET",
+  "certificate_path": null,
+  "certificate_password": null
+}

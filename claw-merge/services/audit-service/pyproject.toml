@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "msclaw-audit-service"
+version = "0.1.0"
+description = "MSClaw audit service – append-only ledger with hash chain"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109,<1",
+    "uvicorn[standard]>=0.27,<1",
+    "asyncpg>=0.29,<1",
+    "nats-py>=2.6,<3",
+    "pydantic>=2.5,<3",
+    "python-ulid>=2.2,<3",
+    "msclaw-shared",
+]

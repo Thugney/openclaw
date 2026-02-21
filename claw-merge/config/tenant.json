@@ -1,0 +1,54 @@
+{
+  "$schema": "./tenant-schema.json",
+  "tenant_id": "YOUR_TENANT_ID",
+  "apps": {
+    "defender_xdr": {
+      "client_id": "YOUR_CLIENT_ID",
+      "client_secret_env": "MSCLAW_DEFENDER_CLIENT_SECRET",
+      "auth_type": "client_credentials",
+      "scopes": [
+        "https://api.securitycenter.microsoft.com/.default"
+      ],
+      "required_permissions": [
+        "Machine.Isolate",
+        "Machine.CollectForensics",
+        "Machine.Scan"
+      ]
+    },
+    "intune": {
+      "client_id": "YOUR_CLIENT_ID",
+      "client_secret_env": "MSCLAW_INTUNE_CLIENT_SECRET",
+      "auth_type": "client_credentials",
+      "scopes": [
+        "https://graph.microsoft.com/.default"
+      ],
+      "required_permissions": [
+        "DeviceManagementManagedDevices.ReadWrite.All",
+        "DeviceManagementConfiguration.ReadWrite.All"
+      ]
+    },
+    "entra": {
+      "client_id": "YOUR_CLIENT_ID",
+      "client_secret_env": "MSCLAW_ENTRA_CLIENT_SECRET",
+      "auth_type": "client_credentials",
+      "scopes": [
+        "https://graph.microsoft.com/.default"
+      ],
+      "required_permissions": [
+        "User.ReadWrite.All"
+      ],
+      "note": "revoke_signin_sessions and disable_user are approval-gated"
+    }
+  },
+  "plugins": {
+    "defender_xdr": {
+      "enabled": true
+    },
+    "intune": {
+      "enabled": true
+    },
+    "entra": {
+      "enabled": true
+    }
+  }
+}

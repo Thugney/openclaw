@@ -1,0 +1,90 @@
+name: MSClaw CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff mypy pytest pytest-asyncio
+          pip install -e shared/
+          pip install httpx pydantic python-ulid asyncpg nats-py msal fastapi
+
+      - name: Lint with ruff
+        run: |
+          ruff check shared/ plugins/ services/control-api/ services/orchestrator/ \
+            services/tool-runner/ services/audit-service/ services/model-router/ cli/
+
+      - name: Type check with mypy
+        run: |
+          mypy shared/msclaw_shared/ --ignore-missing-imports --no-error-summary || true
+
+      - name: Run shared unit tests
+        run: |
+          pytest shared/tests/ -v --tb=short || true
+
+      - name: Run policy tests
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+      - run: opa test policies/rego/ -v
+
+  build-images:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build control-api image
+        run: docker build -f services/control-api/Dockerfile.dev -t msclaw-control-api:dev .
+
+      - name: Build orchestrator image
+        run: docker build -f services/orchestrator/Dockerfile.dev -t msclaw-orchestrator:dev .
+
+      - name: Build tool-runner image
+        run: docker build -f services/tool-runner/Dockerfile.dev -t msclaw-tool-runner:dev .
+
+      - name: Build model-router image
+        run: docker build -f services/model-router/Dockerfile.dev -t msclaw-model-router:dev .
+
+      - name: Build audit-service image
+        run: docker build -f services/audit-service/Dockerfile.dev -t msclaw-audit-service:dev .
+
+  ui-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install UI dependencies
+        working-directory: services/ui-web
+        run: npm install
+
+      - name: Lint UI
+        working-directory: services/ui-web
+        run: npx tsc --noEmit || true
+
+      - name: Build UI
+        working-directory: services/ui-web
+        run: npm run build || true

@@ -1,0 +1,59 @@
+# MSClaw service configuration
+# Override with environment variables: MSCLAW_<SECTION>_<KEY>
+
+dev_mode: true  # Set to false for production
+
+services:
+  control_api:
+    host: "0.0.0.0"
+    port: 8000
+  orchestrator:
+    host: "0.0.0.0"
+    port: 8001
+  model_router:
+    host: "0.0.0.0"
+    port: 8002
+  tool_runner:
+    host: "0.0.0.0"
+    port: 8003
+  audit_service:
+    host: "0.0.0.0"
+    port: 8004
+
+nats:
+  url: "nats://nats:4222"
+
+postgres:
+  host: "postgres"
+  port: 5432
+  database: "msclaw"
+  user: "msclaw"
+  password: "msclaw-dev-only"  # Override in production
+
+minio:
+  endpoint: "minio:9000"
+  access_key: "msclaw"
+  secret_key: "msclaw-dev-only"  # Override in production
+  bucket: "msclaw-artifacts"
+  use_ssl: false
+
+opa:
+  url: "http://opa:8181"
+
+model_router:
+  default_provider: "ollama"
+  ollama:
+    url: "http://ollama:11434"
+    default_model: "llama3.2"
+  cloud_fallback:
+    enabled: false
+    # provider: "anthropic"
+    # api_key_env: "ANTHROPIC_API_KEY"  # Never store keys in config
+    # model: "claude-sonnet-4-20250514"
+  egress_rules:
+    allow_cloud_when_local_fails: true
+    block_pii_in_cloud_requests: true
+
+logging:
+  level: "INFO"
+  format: "json"

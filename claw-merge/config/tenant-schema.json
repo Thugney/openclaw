@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MSClaw Tenant Configuration",
+  "type": "object",
+  "required": ["tenant_id", "apps", "plugins"],
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Microsoft Entra tenant ID (GUID)"
+    },
+    "apps": {
+      "type": "object",
+      "description": "Entra app registrations per plugin",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["client_id", "client_secret_env", "auth_type", "scopes", "required_permissions"],
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "description": "Entra app client ID (GUID)"
+          },
+          "client_secret_env": {
+            "type": "string",
+            "description": "Environment variable name holding the client secret"
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": ["client_credentials", "delegated"],
+            "description": "OAuth2 flow type"
+          },
+          "scopes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "OAuth2 scopes"
+          },
+          "required_permissions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Required Graph/API permissions"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "plugins": {
+      "type": "object",
+      "description": "Plugin enablement flags",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

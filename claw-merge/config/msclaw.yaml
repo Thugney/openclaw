@@ -1,0 +1,33 @@
+# MSClaw Configuration
+# Copy to config.yaml and customize for your environment
+
+services:
+  control_api: http://localhost:8100
+  orchestrator: http://localhost:8101
+  model_router: http://localhost:8102
+  tool_runner: http://localhost:8103
+  audit_service: http://localhost:8104
+  nats_url: nats://localhost:4222
+  postgres_url: postgresql://msclaw:msclaw@localhost:5432/msclaw
+  minio_endpoint: localhost:9000
+  minio_access_key: msclaw
+  minio_secret_key: msclaw-dev-secret
+  opa_url: http://localhost:8181
+
+models:
+  local_ollama_url: http://localhost:11434
+  local_model: llama3.2:3b
+  cloud_provider: anthropic
+  cloud_model: claude-sonnet-4-20250514
+  # cloud_api_key: set via MSCLAW_CLOUD_API_KEY env var
+  prefer_local: true
+  max_cloud_budget_usd: 10.0
+  block_pii_to_cloud: true
+
+plugins:
+  defender_xdr: true
+  intune: true
+  entra: true
+
+dev_mode: true
+log_level: INFO

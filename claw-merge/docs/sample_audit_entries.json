@@ -1,0 +1,170 @@
+[
+  {
+    "id": "01HQXYZ123ABC456DEF789GH",
+    "correlation_id": "01HQXYZ000WORKFLOW001CORR",
+    "timestamp": "2024-12-15T14:30:00.000Z",
+    "actor": "admin@contoso.com",
+    "actor_type": "user",
+    "action": "workflow.contain_device_from_incident.started",
+    "service": "orchestrator",
+    "inputs": {
+      "deviceId": "abc123-mde-device",
+      "incidentId": null,
+      "actor_roles": ["security-lead"]
+    },
+    "outputs": {},
+    "model_id": null,
+    "model_provider": null,
+    "tool_name": null,
+    "idempotency_key": "contain-abc123-1702651800",
+    "policy_decision": null,
+    "policy_rule": null,
+    "policy_reason": null,
+    "approval_chain": [],
+    "previous_hash": null,
+    "entry_hash": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+    "tags": {},
+    "error": null
+  },
+  {
+    "id": "01HQXYZ123ABC456DEF789GI",
+    "correlation_id": "01HQXYZ000WORKFLOW001CORR",
+    "timestamp": "2024-12-15T14:30:01.200Z",
+    "actor": "admin@contoso.com",
+    "actor_type": "user",
+    "action": "defender_xdr.isolate_device",
+    "service": "orchestrator",
+    "inputs": {
+      "deviceId": "abc123-mde-device"
+    },
+    "outputs": {
+      "status": "succeeded",
+      "machineId": "abc123-mde-device",
+      "type": "Isolate"
+    },
+    "model_id": null,
+    "model_provider": null,
+    "tool_name": "defender_xdr.isolate_device",
+    "idempotency_key": "contain-abc123-1702651800-isolate",
+    "policy_decision": "allowed",
+    "policy_rule": "role_lead_allow",
+    "policy_reason": "Allowed: security-lead role has permission",
+    "approval_chain": [],
+    "previous_hash": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+    "entry_hash": "b2c3d4e5f67890123456789012345678901234abcdef5678901234abcdef5678",
+    "tags": {},
+    "error": null
+  },
+  {
+    "id": "01HQXYZ123ABC456DEF789GJ",
+    "correlation_id": "01HQXYZ000WORKFLOW001CORR",
+    "timestamp": "2024-12-15T14:30:03.500Z",
+    "actor": "admin@contoso.com",
+    "actor_type": "user",
+    "action": "defender_xdr.collect_investigation_package",
+    "service": "orchestrator",
+    "inputs": {
+      "deviceId": "abc123-mde-device"
+    },
+    "outputs": {
+      "status": "succeeded",
+      "machineId": "abc123-mde-device",
+      "type": "CollectInvestigationPackage"
+    },
+    "model_id": null,
+    "model_provider": null,
+    "tool_name": "defender_xdr.collect_investigation_package",
+    "idempotency_key": "contain-abc123-1702651800-collect",
+    "policy_decision": "allowed",
+    "policy_rule": "role_lead_allow",
+    "policy_reason": "Allowed: security-lead role has permission",
+    "approval_chain": [],
+    "previous_hash": "b2c3d4e5f67890123456789012345678901234abcdef5678901234abcdef5678",
+    "entry_hash": "c3d4e5f678901234567890123456789012345abcdef6789012345abcdef6789",
+    "tags": {},
+    "error": null
+  },
+  {
+    "id": "01HQXYZ123ABC456DEF789VIP",
+    "correlation_id": "01HQXYZ000WORKFLOW002CORR",
+    "timestamp": "2024-12-15T15:00:00.000Z",
+    "actor": "analyst@contoso.com",
+    "actor_type": "user",
+    "action": "defender_xdr.isolate_device",
+    "service": "orchestrator",
+    "inputs": {
+      "deviceId": "vip-ceo-laptop"
+    },
+    "outputs": {},
+    "model_id": null,
+    "model_provider": null,
+    "tool_name": "defender_xdr.isolate_device",
+    "idempotency_key": "contain-vip-ceo-1702653600-isolate",
+    "policy_decision": "approval_required",
+    "policy_rule": "vip_approval_required",
+    "policy_reason": "Device is tagged VIP – approval required before execution",
+    "approval_chain": [],
+    "previous_hash": "c3d4e5f678901234567890123456789012345abcdef6789012345abcdef6789",
+    "entry_hash": "d4e5f6789012345678901234567890123456abcdef78901234567abcdef78901",
+    "tags": {},
+    "error": null
+  },
+  {
+    "id": "01HQXYZ123ABC456DEF789APP",
+    "correlation_id": "01HQXYZ000WORKFLOW002CORR",
+    "timestamp": "2024-12-15T15:05:30.000Z",
+    "actor": "soc-manager@contoso.com",
+    "actor_type": "user",
+    "action": "approval.approved",
+    "service": "orchestrator",
+    "inputs": {
+      "approval_id": "01HQXYZ_APPROVAL_VIP_001",
+      "workflow_run_id": "01HQXYZ000WORKFLOW002"
+    },
+    "outputs": {},
+    "model_id": null,
+    "model_provider": null,
+    "tool_name": null,
+    "idempotency_key": null,
+    "policy_decision": "approved",
+    "policy_rule": null,
+    "policy_reason": null,
+    "approval_chain": [
+      {
+        "approver": "soc-manager@contoso.com",
+        "decision": "approved",
+        "timestamp": "2024-12-15T15:05:30.000Z",
+        "reason": "Confirmed with CEO assistant, device is compromised"
+      }
+    ],
+    "previous_hash": "d4e5f6789012345678901234567890123456abcdef78901234567abcdef78901",
+    "entry_hash": "e5f67890123456789012345678901234567abcdef890123456789abcdef890123",
+    "tags": {},
+    "error": null
+  },
+  {
+    "id": "01HQXYZ123ABC456DENIED001",
+    "correlation_id": "01HQXYZ000WORKFLOW003CORR",
+    "timestamp": "2024-12-15T16:00:00.000Z",
+    "actor": "analyst@contoso.com",
+    "actor_type": "user",
+    "action": "defender_xdr.isolate_device",
+    "service": "orchestrator",
+    "inputs": {
+      "deviceId": "server-prod-001"
+    },
+    "outputs": {},
+    "model_id": null,
+    "model_provider": null,
+    "tool_name": "defender_xdr.isolate_device",
+    "idempotency_key": "contain-server-1702657200-isolate",
+    "policy_decision": "denied",
+    "policy_rule": "default_deny",
+    "policy_reason": "Action defender_xdr.isolate_device is not recognized or not allowed for roles ['security-analyst']",
+    "approval_chain": [],
+    "previous_hash": "e5f67890123456789012345678901234567abcdef890123456789abcdef890123",
+    "entry_hash": "f6789012345678901234567890123456789abcdef0123456789012abcdef01234",
+    "tags": {},
+    "error": "Policy denied: Action defender_xdr.isolate_device is not allowed for security-analyst role"
+  }
+]

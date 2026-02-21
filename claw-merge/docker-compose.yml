@@ -1,0 +1,176 @@
+version: "3.9"
+
+services:
+  # -- Infrastructure --
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: msclaw
+      POSTGRES_USER: msclaw
+      POSTGRES_PASSWORD: msclaw-dev-only
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U msclaw"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["--jetstream", "--store_dir", "/data"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"  # monitoring
+    volumes:
+      - nats_data:/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: msclaw
+      MINIO_ROOT_PASSWORD: msclaw-dev-only
+    ports:
+      - "9000:9000"
+      - "9001:9001"  # console
+    volumes:
+      - minio_data:/data
+
+  opa:
+    image: openpolicyagent/opa:latest-static
+    command: ["run", "--server", "--log-level", "info", "/policies"]
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./policies/rego:/policies:ro
+
+  # -- MSClaw Services --
+
+  control-api:
+    build:
+      context: .
+      dockerfile: services/control-api/Dockerfile.dev
+    environment:
+      DATABASE_URL: postgresql://msclaw:msclaw-dev-only@postgres:5432/msclaw
+      NATS_URL: nats://nats:4222
+      DEV_MODE: "true"
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    volumes:
+      - ./shared:/shared:ro
+      - ./services/control-api:/app:ro
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: services/orchestrator/Dockerfile.dev
+    environment:
+      NATS_URL: nats://nats:4222
+      CONTROL_API_URL: http://control-api:8000
+      TOOL_RUNNER_URL: http://tool-runner:8003
+      MODEL_ROUTER_URL: http://model-router:8002
+      OPA_URL: http://opa:8181
+      DEV_MODE: "true"
+      LOG_LEVEL: INFO
+    depends_on:
+      - nats
+      - control-api
+    volumes:
+      - ./shared:/shared:ro
+      - ./services/orchestrator:/app:ro
+      - ./plugins:/plugins:ro
+
+  tool-runner:
+    build:
+      context: .
+      dockerfile: services/tool-runner/Dockerfile.dev
+    environment:
+      NATS_URL: nats://nats:4222
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: msclaw
+      MINIO_SECRET_KEY: msclaw-dev-only
+      MINIO_BUCKET: msclaw-artifacts
+      DEV_MODE: "true"
+      LOG_LEVEL: INFO
+    ports:
+      - "8003:8003"
+    depends_on:
+      - nats
+      - minio
+    volumes:
+      - ./shared:/shared:ro
+      - ./services/tool-runner:/app:ro
+      - ./plugins:/plugins:ro
+
+  model-router:
+    build:
+      context: .
+      dockerfile: services/model-router/Dockerfile.dev
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      DEFAULT_MODEL: llama3.2
+      CLOUD_FALLBACK_ENABLED: "false"
+      OPA_URL: http://opa:8181
+      LOG_LEVEL: INFO
+    ports:
+      - "8002:8002"
+    depends_on:
+      - opa
+    volumes:
+      - ./shared:/shared:ro
+      - ./services/model-router:/app:ro
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: services/audit-service/Dockerfile.dev
+    environment:
+      DATABASE_URL: postgresql://msclaw:msclaw-dev-only@postgres:5432/msclaw
+      NATS_URL: nats://nats:4222
+      LOG_LEVEL: INFO
+    ports:
+      - "8004:8004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    volumes:
+      - ./shared:/shared:ro
+      - ./services/audit-service:/app:ro
+
+  ui-web:
+    build:
+      context: ./services/ui-web
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - control-api
+    volumes:
+      - ./services/ui-web/src:/app/src:ro
+      - ./services/ui-web/public:/app/public:ro
+
+  # -- Optional: Local LLM (uncomment if you have GPU) --
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+
+volumes:
+  pg_data:
+  nats_data:
+  minio_data:
+  # ollama_data:

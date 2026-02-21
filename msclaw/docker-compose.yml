@@ -1,0 +1,177 @@
+###############################################################################
+# MSClaw – Durable, policy-gated agent runtime
+# docker-compose up -d
+###############################################################################
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: msclaw
+      POSTGRES_USER: msclaw
+      POSTGRES_PASSWORD: msclaw
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U msclaw"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"   # monitoring
+    volumes:
+      - natsdata:/data
+    healthcheck:
+      test: ["CMD", "nats-server", "--help"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: msclaw
+      MINIO_ROOT_PASSWORD: msclaw123
+    ports:
+      - "9000:9000"
+      - "9001:9001"   # console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  opa:
+    image: openpolicyagent/opa:latest-static
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - --log-level=info
+      - /policies
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./policies:/policies:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8181/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # MSClaw Services
+  # ---------------------------------------------------------------------------
+  control-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "uvicorn", "msclaw.control_api.app:app", "--host", "0.0.0.0", "--port", "8080"]
+    ports:
+      - "8080:8080"
+    environment: &common-env
+      DATABASE_URL: postgresql+asyncpg://msclaw:msclaw@postgres:5432/msclaw
+      NATS_URL: nats://nats:4222
+      OPA_URL: http://opa:8181
+      OPA_POLICY_PATH: /v1/data/msclaw
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: msclaw
+      MINIO_SECRET_KEY: msclaw123
+      MINIO_BUCKET: msclaw-artifacts
+      MS_MODE: ${MS_MODE:-mock}
+      MS_TENANT_ID: ${MS_TENANT_ID:-}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      LOG_LEVEL: INFO
+      CONTROL_API_PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "msclaw.orchestrator"]
+    environment: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+
+  tool-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "msclaw.tool_runner"]
+    environment: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "msclaw.audit_service", "serve"]
+    environment: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # UI (static file server)
+  # ---------------------------------------------------------------------------
+  ui:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./ui:/usr/share/nginx/html:ro
+
+  # ---------------------------------------------------------------------------
+  # DB Migrations
+  # ---------------------------------------------------------------------------
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-c", "import asyncio; from msclaw.shared.db_init import run_migrations; asyncio.run(run_migrations())"]
+    environment: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
+  natsdata:
+    driver: local
+  miniodata:
+    driver: local

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "msclaw"
+version = "0.1.0"
+description = "Durable, policy-gated agent runtime for Microsoft security operations"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "sqlalchemy[asyncio]>=2.0.25",
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.0",
+    "nats-py>=2.6.0",
+    "httpx>=0.26.0",
+    "minio>=7.2.0",
+    "pydantic>=2.5.0",
+]
+
+[project.scripts]
+msclaw-audit = "msclaw.audit_service.service:main"
+
+[tool.setuptools.packages.find]
+include = ["msclaw*"]
